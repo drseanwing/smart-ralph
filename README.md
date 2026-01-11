@@ -11,16 +11,38 @@ Spec-driven development with smart compaction. A Claude Code plugin that combine
 
 ## Installation
 
-### From Marketplace
+### From Marketplace (Recommended)
 
-```
-/plugin install ralph-specum@<marketplace>
+```bash
+# Add the marketplace
+/plugin marketplace add tzachbon/ralph-specum
+
+# Install the plugin
+/plugin install ralph-specum@ralph-specum
+
+# Restart Claude Code to load
 ```
 
-### Local Installation
+### From GitHub Repository
 
-```
+```bash
+# Clone the repo
+git clone https://github.com/tzachbon/ralph-specum.git
+
+# Install from local path
 /plugin install /path/to/ralph-specum
+
+# Or install directly from GitHub
+/plugin install https://github.com/tzachbon/ralph-specum
+```
+
+### Local Development
+
+```bash
+# Clone and link for development
+git clone https://github.com/tzachbon/ralph-specum.git
+cd ralph-specum
+/plugin install .
 ```
 
 ## Quick Start
