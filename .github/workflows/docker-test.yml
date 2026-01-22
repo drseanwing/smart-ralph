@@ -1,0 +1,174 @@
+name: Docker Setup Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'copilot/**'
+    paths:
+      - 'docker-setup.sh'
+      - 'docker-examples.sh'
+      - 'DOCKER.md'
+      - 'test-docker-setup.sh'
+      - 'test-docker-integration.sh'
+      - '.github/workflows/docker-test.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docker-setup.sh'
+      - 'docker-examples.sh'
+      - 'DOCKER.md'
+      - 'test-docker-setup.sh'
+      - 'test-docker-integration.sh'
+      - '.github/workflows/docker-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test-docker-setup:
+    name: Test Docker Setup Script
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Run Docker setup tests
+        run: |
+          chmod +x test-docker-setup.sh
+          ./test-docker-setup.sh
+      
+      - name: Run Docker integration tests
+        run: |
+          chmod +x test-docker-integration.sh
+          ./test-docker-integration.sh
+      
+      - name: Test docker-setup.sh with default configuration
+        run: |
+          # Run with non-interactive mode
+          export CLAUDE_CONTAINER_NAME=ci-test-claude-$$
+          export CLAUDE_VOLUME=ci-test-data-$$
+          
+          # Create a non-interactive version by piping 'n' to skip removal prompt
+          echo "n" | ./docker-setup.sh || true
+          
+          # Verify container was created
+          docker ps -a | grep ci-test-claude || exit 1
+          
+          # Cleanup
+          docker stop ci-test-claude-$$ 2>/dev/null || true
+          docker rm ci-test-claude-$$ 2>/dev/null || true
+          docker volume rm ci-test-data-$$ 2>/dev/null || true
+      
+      - name: Verify Docker documentation
+        run: |
+          # Check that DOCKER.md exists and has content
+          if [ ! -f DOCKER.md ]; then
+            echo "DOCKER.md not found"
+            exit 1
+          fi
+          
+          # Check for essential documentation sections
+          grep -q "Quick Start" DOCKER.md || { echo "Missing Quick Start section"; exit 1; }
+          grep -q "Prerequisites" DOCKER.md || { echo "Missing Prerequisites section"; exit 1; }
+          grep -q "Environment Variables" DOCKER.md || { echo "Missing Environment Variables section"; exit 1; }
+          grep -q "Container Management" DOCKER.md || { echo "Missing Container Management section"; exit 1; }
+          grep -q "Volume Management" DOCKER.md || { echo "Missing Volume Management section"; exit 1; }
+          
+          echo "✓ All required documentation sections found"
+      
+      - name: Verify script permissions
+        run: |
+          # Verify scripts are executable
+          if [ ! -x docker-setup.sh ]; then
+            echo "docker-setup.sh is not executable"
+            exit 1
+          fi
+          
+          if [ ! -x docker-examples.sh ]; then
+            echo "docker-examples.sh is not executable"
+            exit 1
+          fi
+          
+          if [ ! -x test-docker-setup.sh ]; then
+            echo "test-docker-setup.sh is not executable"
+            exit 1
+          fi
+          
+          echo "✓ All scripts have correct permissions"
+      
+      - name: Test with custom configuration
+        run: |
+          # Test with custom container and volume names
+          export CLAUDE_CONTAINER_NAME=custom-test-$$
+          export CLAUDE_VOLUME=custom-volume-$$
+          export CLAUDE_IMAGE=node:20-alpine
+          
+          # Create container
+          docker volume create $CLAUDE_VOLUME
+          docker run -d \
+            --name $CLAUDE_CONTAINER_NAME \
+            --volume $CLAUDE_VOLUME:/workspace \
+            --workdir /workspace \
+            $CLAUDE_IMAGE \
+            sleep 60
+          
+          # Verify it works
+          docker exec $CLAUDE_CONTAINER_NAME node --version
+          docker exec $CLAUDE_CONTAINER_NAME npm --version
+          
+          # Cleanup
+          docker stop $CLAUDE_CONTAINER_NAME
+          docker rm $CLAUDE_CONTAINER_NAME
+          docker volume rm $CLAUDE_VOLUME
+          
+          echo "✓ Custom configuration works"
+  
+  test-rootless-compatibility:
+    name: Test Rootless Docker Compatibility
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Test named volume approach
+        run: |
+          # Verify named volumes work (rootless Docker compatible)
+          TEST_VOLUME=rootless-test-$$
+          TEST_CONTAINER=rootless-container-$$
+          
+          # Create volume
+          docker volume create $TEST_VOLUME
+          
+          # Start container with named volume
+          docker run -d \
+            --name $TEST_CONTAINER \
+            --volume $TEST_VOLUME:/data \
+            node:20-bookworm \
+            sleep 60
+          
+          # Write data
+          docker exec $TEST_CONTAINER sh -c "echo 'rootless test' > /data/test.txt"
+          
+          # Read data
+          CONTENT=$(docker exec $TEST_CONTAINER cat /data/test.txt)
+          
+          if [ "$CONTENT" != "rootless test" ]; then
+            echo "Data mismatch in named volume"
+            exit 1
+          fi
+          
+          # Cleanup
+          docker stop $TEST_CONTAINER
+          docker rm $TEST_CONTAINER
+          docker volume rm $TEST_VOLUME
+          
+          echo "✓ Named volumes work correctly (rootless Docker compatible)"

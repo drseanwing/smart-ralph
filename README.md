@@ -94,7 +94,13 @@ Run Claude Code with Smart Ralph in a Docker container:
 ./docker-setup.sh
 ```
 
-See [DOCKER.md](DOCKER.md) for detailed Docker setup instructions, including rootless Docker configuration and volume management.
+Test the Docker setup:
+
+```bash
+./test-docker-setup.sh
+```
+
+See [DOCKER.md](DOCKER.md) for detailed Docker setup instructions, testing procedures, rootless Docker configuration, and volume management.
 
 ---
 
