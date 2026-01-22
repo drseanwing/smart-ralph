@@ -10,6 +10,7 @@ on:
       - 'docker-examples.sh'
       - 'DOCKER.md'
       - 'test-docker-setup.sh'
+      - 'test-docker-integration.sh'
       - '.github/workflows/docker-test.yml'
   pull_request:
     branches:
@@ -19,6 +20,7 @@ on:
       - 'docker-examples.sh'
       - 'DOCKER.md'
       - 'test-docker-setup.sh'
+      - 'test-docker-integration.sh'
       - '.github/workflows/docker-test.yml'
   workflow_dispatch:
 
@@ -26,6 +28,8 @@ jobs:
   test-docker-setup:
     name: Test Docker Setup Script
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -128,6 +132,8 @@ jobs:
   test-rootless-compatibility:
     name: Test Rootless Docker Compatibility
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
