@@ -292,6 +292,97 @@ docker run -d \
   sleep infinity
 ```
 
+## Testing
+
+### Automated Tests
+
+Run the automated test suite to verify Docker setup functionality:
+
+```bash
+./test-docker-setup.sh
+```
+
+This test suite validates:
+- Docker availability and daemon status
+- Volume creation and management
+- Container lifecycle (start, stop, restart)
+- Volume persistence across restarts
+- Node.js and npm availability
+- Working directory configuration
+- Script permissions and documentation
+
+### Manual Testing
+
+#### Test Basic Setup
+
+```bash
+# Run the setup script
+./docker-setup.sh
+
+# Verify container is running
+docker ps | grep claude-code-ralph
+
+# Enter the container
+docker exec -it claude-code-ralph bash
+
+# Inside container - verify Node.js
+node --version
+npm --version
+
+# Exit container
+exit
+```
+
+#### Test Volume Persistence
+
+```bash
+# Create a test file
+docker exec claude-code-ralph bash -c "echo 'test data' > /workspace/test.txt"
+
+# Restart container
+docker restart claude-code-ralph
+
+# Verify data persists
+docker exec claude-code-ralph cat /workspace/test.txt
+# Should output: test data
+```
+
+#### Test Custom Configuration
+
+```bash
+# Clean up any existing test resources
+docker rm -f test-claude 2>/dev/null || true
+docker volume rm test-data 2>/dev/null || true
+
+# Run with custom settings
+CLAUDE_CONTAINER_NAME=test-claude \
+CLAUDE_VOLUME=test-data \
+CLAUDE_IMAGE=node:20-alpine \
+./docker-setup.sh
+
+# Verify custom setup
+docker ps | grep test-claude
+docker volume ls | grep test-data
+```
+
+### CI/CD Testing
+
+The repository includes a GitHub Actions workflow (`.github/workflows/docker-test.yml`) that automatically tests:
+
+- Docker setup script functionality
+- Named volume creation and persistence
+- Container lifecycle management
+- Multiple configurations (default and custom)
+- Rootless Docker compatibility
+- Documentation completeness
+
+Tests run automatically on:
+- Pushes to `main` branch
+- Pull requests to `main` branch
+- Changes to Docker-related files
+
+View test results in the [Actions tab](https://github.com/drseanwing/smart-ralph/actions).
+
 ## See Also
 
 - [Smart Ralph README](README.md) - Main plugin documentation
