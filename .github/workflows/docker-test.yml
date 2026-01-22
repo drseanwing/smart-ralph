@@ -39,6 +39,11 @@ jobs:
           chmod +x test-docker-setup.sh
           ./test-docker-setup.sh
       
+      - name: Run Docker integration tests
+        run: |
+          chmod +x test-docker-integration.sh
+          ./test-docker-integration.sh
+      
       - name: Test docker-setup.sh with default configuration
         run: |
           # Run with non-interactive mode

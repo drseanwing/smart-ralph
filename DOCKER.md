@@ -299,10 +299,14 @@ docker run -d \
 Run the automated test suite to verify Docker setup functionality:
 
 ```bash
+# Run unit tests
 ./test-docker-setup.sh
+
+# Run integration tests (tests the full docker-setup.sh workflow)
+./test-docker-integration.sh
 ```
 
-This test suite validates:
+The **unit test suite** (`test-docker-setup.sh`) validates:
 - Docker availability and daemon status
 - Volume creation and management
 - Container lifecycle (start, stop, restart)
@@ -310,6 +314,14 @@ This test suite validates:
 - Node.js and npm availability
 - Working directory configuration
 - Script permissions and documentation
+
+The **integration test suite** (`test-docker-integration.sh`) validates:
+- Complete docker-setup.sh execution workflow
+- Container creation with environment variables
+- Volume mounting and configuration
+- Data persistence across container restarts
+- Tool availability (bash, git, curl)
+- Script behavior with existing containers
 
 ### Manual Testing
 
