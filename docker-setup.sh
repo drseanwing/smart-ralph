@@ -79,6 +79,8 @@ if [ "${EXISTING_CONTAINER:-false}" != "true" ]; then
 
     # Start container with named volume
     # Using named volumes for rootless Docker compatibility
+    # Note: Using --network host for simplicity. For better isolation, consider:
+    #   removing --network host and adding -p 8080:8080 or other specific port mappings
     docker run -d \
         --name "$CONTAINER_NAME" \
         --volume "$VOLUME_NAME:$WORK_DIR" \
@@ -116,24 +118,31 @@ run_in_container() {
 print_msg "$YELLOW" "Installing Ralph Loop plugin (ralph-wiggum)..."
 print_msg "$BLUE" "  This is the core execution loop dependency"
 
-# Note: The actual plugin installation requires Claude Code CLI to be available
-# These commands are provided as examples and may need to be run manually
+# Note: Plugin installation requires Claude Code CLI to be available
+# and typically needs to be run interactively. The script provides
+# installation commands for manual execution.
 
-cat > /tmp/install_plugins.sh << 'EOF'
+# Create a secure temporary file for the installation script
+TEMP_SCRIPT=$(mktemp)
+cat > "$TEMP_SCRIPT" << 'EOF'
 #!/bin/bash
 set -e
 
-echo "Attempting to install Ralph Loop plugin..."
+echo "Checking for Claude Code CLI..."
 if command -v claude &> /dev/null; then
-    # Install Ralph Loop plugin first (dependency)
-    claude --help &> /dev/null || true
-    echo "Installing ralph-wiggum@claude-plugins-official..."
-    # Note: The exact command may vary based on Claude Code CLI
-    # This is based on documentation
-    echo "/plugin install ralph-wiggum@claude-plugins-official" | claude || echo "Plugin install command may need to be run interactively"
+    echo "Claude Code found!"
+    echo ""
+    echo "NOTE: Plugin installation typically requires an interactive session."
+    echo "Please run these commands manually in Claude Code:"
+    echo ""
+    echo "  /plugin install ralph-wiggum@claude-plugins-official"
+    echo "  /plugin marketplace add tzachbon/smart-ralph"
+    echo "  /plugin install ralph-specum@smart-ralph"
+    echo "  /plugin install ralph-speckit@smart-ralph"
 else
-    echo "Claude Code CLI not available yet. Plugins must be installed manually."
-    echo "Run these commands after Claude Code is installed:"
+    echo "Claude Code CLI not available yet."
+    echo ""
+    echo "After installing Claude Code, run these commands:"
     echo "  /plugin install ralph-wiggum@claude-plugins-official"
     echo "  /plugin marketplace add tzachbon/smart-ralph"
     echo "  /plugin install ralph-specum@smart-ralph"
@@ -141,11 +150,12 @@ else
 fi
 EOF
 
-chmod +x /tmp/install_plugins.sh
-docker cp /tmp/install_plugins.sh "$CONTAINER_NAME:/tmp/install_plugins.sh"
+chmod +x "$TEMP_SCRIPT"
+docker cp "$TEMP_SCRIPT" "$CONTAINER_NAME:/tmp/install_plugins.sh"
 run_in_container "/tmp/install_plugins.sh" || print_msg "$YELLOW" "Plugin installation requires interactive Claude Code session"
 
-rm /tmp/install_plugins.sh
+# Clean up temporary file
+rm -f "$TEMP_SCRIPT"
 
 echo
 print_msg "$GREEN" "==============================================="
