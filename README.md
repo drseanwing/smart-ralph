@@ -86,6 +86,16 @@ cd smart-ralph/plugins/ralph-specum
 claude --plugin-dir $(pwd)
 ```
 
+### Docker Setup
+
+Run Claude Code with Smart Ralph in a Docker container:
+
+```bash
+./docker-setup.sh
+```
+
+See [DOCKER.md](DOCKER.md) for detailed Docker setup instructions, including rootless Docker configuration and volume management.
+
 ---
 
 ## Quick Start
